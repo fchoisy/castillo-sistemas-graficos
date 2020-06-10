@@ -48,8 +48,8 @@ const TranslationSurface = (function () {
 
         // Index buffer for the triangles
         var indexBuffer = Geometry.gridIndices(path.model.length - 1, shape.positions.length - 1);
-
-        return Geometry.createGLBuffers(positionBuffer, normalBuffer, uvBuffer, indexBuffer);
+        var buffers = Geometry.createGLBuffers(positionBuffer, normalBuffer, uvBuffer, indexBuffer);
+        return new Geometry.Model(buffers.webgl_position_buffer, buffers.webgl_normal_buffer, buffers.webgl_uvs_buffer, buffers.webgl_index_buffer);
     }
 
     /**

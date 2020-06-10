@@ -1,8 +1,49 @@
 
 /**
- * Common utility functions for drawing 3D surfaces
+ * Common utility functions for drawing 3D objects
  */
 const Geometry = (function () {
+
+    function Model(positionBuffer, normalBuffer, uvBuffer, indexBuffer) {
+        this.positionBuffer = positionBuffer;
+        this.normalBuffer = normalBuffer;
+        this.uvBuffer = uvBuffer;
+        this.indexBuffer = indexBuffer;
+    }
+
+    function Object3D(model, modelMatrix) {
+        this.model = model;
+        this.modelMatrix = modelMatrix;
+        this.children = [];
+        this.draw = function(gl, glProgram) {
+            for (const child of this.children) {
+                child.draw();
+            }
+            var modelMatrixUniform = gl.getUniformLocation(glProgram, "modelMatrix");
+            var viewMatrixUniform = gl.getUniformLocation(glProgram, "viewMatrix");
+            var projMatrixUniform = gl.getUniformLocation(glProgram, "projMatrix");
+            var normalMatrixUniform = gl.getUniformLocation(glProgram, "normalMatrix");
+
+            gl.uniformMatrix4fv(modelMatrixUniform, false, this.modelMatrix);
+            gl.uniformMatrix4fv(viewMatrixUniform, false, viewMatrix);
+            gl.uniformMatrix4fv(projMatrixUniform, false, projMatrix);
+            gl.uniformMatrix4fv(normalMatrixUniform, false, normalMatrix);
+
+            var vertexPositionAttribute = gl.getAttribLocation(glProgram, "aVertexPosition");
+            gl.enableVertexAttribArray(vertexPositionAttribute);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.model.positionBuffer);
+            gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
+
+            var vertexNormalAttribute = gl.getAttribLocation(glProgram, "aVertexNormal");
+            gl.enableVertexAttribArray(vertexNormalAttribute);
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.model.normalBuffer);
+            gl.vertexAttribPointer(vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0);
+
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.model.indexBuffer);
+            gl.drawElements(gl.TRIANGLE_STRIP, this.model.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+        }
+    }
+
     /**
      * Returns the indices to draw a grid of quads
      * using 1 single TRIANGLE_STRIP instruction.
@@ -59,7 +100,6 @@ const Geometry = (function () {
         webgl_uvs_buffer.itemSize = 2;
         webgl_uvs_buffer.numItems = uvBuffer.length / 2;
 
-
         webgl_index_buffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, webgl_index_buffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexBuffer), gl.STATIC_DRAW);
@@ -75,7 +115,9 @@ const Geometry = (function () {
     }
 
     return {
+        Model: Model,
+        Object3D: Object3D,
         gridIndices: gridIndices,
-        createGLBuffers: createGLBuffers
+        createGLBuffers: createGLBuffers,
     }
 })();

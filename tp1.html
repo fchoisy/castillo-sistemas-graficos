@@ -68,12 +68,8 @@
             glProgram = null,
             fragmentShader = null,
             vertexShader = null;
-
-        var vertexPositionAttribute = null,
-            trianglesVerticeBuffer = null,
-            vertexNormalAttribute = null,
-            trianglesNormalBuffer = null,
-            trianglesIndexBuffer = null;
+        
+        var sceneObjects = [];
 
         var modelMatrix = mat4.create();
         var viewMatrix = mat4.create();
@@ -99,7 +95,6 @@
                 setupWebGL();
                 initShaders();
                 setupBuffers();
-                setupVertexShaderMatrix();
                 tick();
 
             } else {
@@ -121,8 +116,8 @@
 
             mat4.perspective(projMatrix, 45, canvas.width / canvas.height, 0.1, 100.0);
 
-            mat4.identity(modelMatrix);
-            mat4.rotate(modelMatrix, modelMatrix, -1.57078, [1.0, 0.0, 0.0]);
+            // mat4.identity(modelMatrix);
+            // mat4.rotate(modelMatrix, modelMatrix, -1.57078, [1.0, 0.0, 0.0]);
 
             mat4.identity(viewMatrix);
             mat4.translate(viewMatrix, viewMatrix, [0.0, 0.0, -5.0]);
@@ -166,68 +161,25 @@
             return shader;
         }
 
-
         function setupBuffers() {
-            var arrays = ParametricSurface.generateSpherical(new ParametricSurface.StrangeBall(), 128, 256);
-
-            // var buffers = Geometry.createGLBuffers(arrays.pos, arrays.normal, arrays.index);
-
-            // trianglesVerticeBuffer = buffers.webgl_position_buffer;
-            // trianglesNormalBuffer = buffers.webgl_normal_buffer;
-            // trianglesIndexBuffer = buffers.webgl_index_buffer;
-
-            trianglesVerticeBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, trianglesVerticeBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arrays.pos), gl.STATIC_DRAW);
-
-
-            trianglesNormalBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, trianglesNormalBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(arrays.normal), gl.STATIC_DRAW);
-
-
-            trianglesIndexBuffer = gl.createBuffer();
-            trianglesIndexBuffer.number_vertex_point = arrays.index.length;
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, trianglesIndexBuffer);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(arrays.index), gl.STATIC_DRAW);
-        }
-
-        function setupVertexShaderMatrix() {
-            var modelMatrixUniform = gl.getUniformLocation(glProgram, "modelMatrix");
-            var viewMatrixUniform = gl.getUniformLocation(glProgram, "viewMatrix");
-            var projMatrixUniform = gl.getUniformLocation(glProgram, "projMatrix");
-            var normalMatrixUniform = gl.getUniformLocation(glProgram, "normalMatrix");
-
-            gl.uniformMatrix4fv(modelMatrixUniform, false, modelMatrix);
-            gl.uniformMatrix4fv(viewMatrixUniform, false, viewMatrix);
-            gl.uniformMatrix4fv(projMatrixUniform, false, projMatrix);
-            gl.uniformMatrix4fv(normalMatrixUniform, false, normalMatrix);
+            var model1 = ParametricSurface.generateCartesian(new ParametricSurface.TuboSenoidal(.2, .6, .8, 1.2), 32, 32);
+            sceneObjects.push(new Geometry.Object3D(model1, modelMatrix));
+            
+            var model2 = ParametricSurface.generateSpherical(new ParametricSurface.StrangeBall(), 128, 256);
+            sceneObjects.push(new Geometry.Object3D(model2, modelMatrix));
         }
 
         function drawScene() {
-            setupVertexShaderMatrix();
-
-            vertexPositionAttribute = gl.getAttribLocation(glProgram, "aVertexPosition");
-            gl.enableVertexAttribArray(vertexPositionAttribute);
-            gl.bindBuffer(gl.ARRAY_BUFFER, trianglesVerticeBuffer);
-            gl.vertexAttribPointer(vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0);
-
-            vertexNormalAttribute = gl.getAttribLocation(glProgram, "aVertexNormal");
-            gl.enableVertexAttribArray(vertexNormalAttribute);
-            gl.bindBuffer(gl.ARRAY_BUFFER, trianglesNormalBuffer);
-            gl.vertexAttribPointer(vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0);
-
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, trianglesIndexBuffer);
-            gl.drawElements(gl.TRIANGLE_STRIP, trianglesIndexBuffer.number_vertex_point, gl.UNSIGNED_SHORT, 0);
+            for (const object3D of sceneObjects) {
+                object3D.draw(gl, glProgram);
+            }
         }
-
-
-
-
 
         function animate() {
 
             rotate_angle += 0.01;
+            mat4.identity(modelMatrix);
+            mat4.rotate(modelMatrix, modelMatrix, rotate_angle, [1.0, 0.0, 1.0]);
             mat4.identity(modelMatrix);
             mat4.rotate(modelMatrix, modelMatrix, rotate_angle, [1.0, 0.0, 1.0]);
 
